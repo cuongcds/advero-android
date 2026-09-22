@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Merged into host app's manifest; host must also declare it explicitly
+         per Google Play's manifest-merger expectations for library-only permissions. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>
