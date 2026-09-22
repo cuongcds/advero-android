@@ -148,11 +148,21 @@ repo's root in Android Studio and run the `example` configuration, or:
 ./gradlew :example:installDebug
 ```
 
-Edit the `baseUrl`/`placementCode` in
-[`example/src/main/java/com/advero/example/MainActivity.kt`](example/src/main/java/com/advero/example/MainActivity.kt)
-before running it against a real Advero account. A real app would instead
-depend on the published artifact (see "Install" above) rather than the local
-`:advero-sdk` project reference this example uses.
+Before running it against a real Advero account, set:
+
+- `baseUrl` — the `ADVERO_BASE_URL` build config field in
+  [`example/build.gradle.kts`](example/build.gradle.kts)'s `defaultConfig`
+  (exposed to Kotlin as `BuildConfig.ADVERO_BASE_URL`). Per-build-config
+  rather than hardcoded, so a debug/release/staging variant can point at a
+  different backend without touching source.
+- `placementCode` — the `advero_placement_code` string resource in
+  [`example/src/main/res/values/strings.xml`](example/src/main/res/values/strings.xml)
+  (read via `getString(R.string.advero_placement_code)`). Override it per
+  product flavor with a matching `res/values-<flavor>/strings.xml` if needed.
+
+A real app would instead depend on the published artifact (see "Install"
+above) rather than the local `:advero-sdk` project reference this example
+uses.
 
 ## Build
 

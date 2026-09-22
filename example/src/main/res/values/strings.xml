@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Advero SDK Example</string>
+
+    <!-- Placement code copied as-is from the Placements list — never split
+         or constructed by hand. See ../../../README.md "Getting your
+         baseUrl/placementCode". -->
+    <string name="advero_placement_code" translatable="false">ap-33a54681ceca44ef44f3-dc5011b8</string>
 </resources>

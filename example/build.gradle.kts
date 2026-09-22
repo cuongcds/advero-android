@@ -13,6 +13,15 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // Ad-serving host, per build config rather than hardcoded in source —
+        // lets debug/release (or a staging variant) point at different
+        // Advero backends without touching Kotlin code.
+        buildConfigField("String", "ADVERO_BASE_URL", "\"https://advero.shplinks.com\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
