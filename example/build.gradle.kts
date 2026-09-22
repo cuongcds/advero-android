@@ -41,8 +41,10 @@ android {
 }
 
 dependencies {
-    // Local module reference here — a real app would instead depend on the
-    // published artifact, e.g. implementation("com.github.cuongcds:advero-android:<version>")
-    implementation(project(":advero-sdk"))
+    // The published artifact via JitPack — same as any real integrating
+    // app would use (see ../README.md "Install"), not the local :advero-sdk
+    // project reference, so this example doubles as a smoke test that the
+    // published dependency actually resolves and works.
+    implementation("com.github.cuongcds:advero-android:v0.1.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
 }

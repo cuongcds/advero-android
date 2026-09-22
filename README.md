@@ -143,8 +143,12 @@ Behavior:
 ## Example app
 
 [`example/`](example/) is a minimal, runnable Android app (one `MainActivity`,
-one ad slot) that depends on the `advero-sdk` module directly — open this
-repo's root in Android Studio and run the `example` configuration, or:
+one ad slot) that depends on the **published** `com.github.cuongcds:advero-android`
+artifact via JitPack (see "Install" above) — the same way any real
+integrating app would, not a local `:advero-sdk` project reference — so
+building it also doubles as a smoke test that the published dependency
+resolves and works. Open this repo's root in Android Studio and run the
+`example` configuration, or:
 
 ```bash
 ./gradlew :example:installDebug
@@ -161,10 +165,6 @@ Before running it against a real Advero account, set:
   [`example/src/main/res/values/strings.xml`](example/src/main/res/values/strings.xml)
   (read via `getString(R.string.advero_placement_code)`). Override it per
   product flavor with a matching `res/values-<flavor>/strings.xml` if needed.
-
-A real app would instead depend on the published artifact (see "Install"
-above) rather than the local `:advero-sdk` project reference this example
-uses.
 
 ## Build
 
