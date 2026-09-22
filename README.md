@@ -23,12 +23,14 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.<org>:advero-android:<version>")
+    implementation("com.github.cuongcds:advero-android:v0.1.0")
 }
 ```
 
-Pin to an exact release tag (`<version>`) rather than a branch — this avoids
-a future breaking release changing behavior in your app without notice.
+Pin to an exact release tag (e.g. `v0.1.0`) rather than a branch — this
+avoids a future breaking release changing behavior in your app without
+notice. See [releases](https://github.com/cuongcds/advero-android/tags) for
+the latest tag.
 
 The library declares `INTERNET` in its manifest, which Gradle's manifest
 merger folds into your app automatically. If your app already declares
