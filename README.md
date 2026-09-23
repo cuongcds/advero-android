@@ -94,6 +94,7 @@ Throws `IllegalArgumentException` immediately if `baseUrl` is blank.
 | `onClick` | no | Called with `clickUrl` when the user taps the ad. If omitted, the SDK opens `clickUrl` itself via a [Custom Tab](https://developer.android.com/develop/ui/views/layout/webapps/browser-custom-tabs). |
 
 Behavior:
+
 - On success (`200` with `{ creative_url, click_url }`), downloads
   `creative_url` and shows it in `imageView`; tapping it opens `click_url`.
   This also covers the placeholder response (`{ ..., placeholder: true }`)
