@@ -16,9 +16,14 @@ internal object AdveroApiClient {
     private const val DEFAULT_VIEW_MS = 1000L
 
     /** Returns null for any non-fatal outcome: 204, non-2xx, network error, or bad JSON. */
-    fun fetchAd(baseUrl: String, placementCode: String, viewer: AdveroViewer? = null): AdveroAdResponse? {
+    fun fetchAd(
+        baseUrl: String,
+        placementCode: String,
+        viewer: AdveroViewer? = null,
+        appId: String? = null
+    ): AdveroAdResponse? {
         val encodedCode = URLEncoder.encode(placementCode, "UTF-8")
-        val url = URL("$baseUrl/ads/serve/$encodedCode${viewerQuery(viewer)}")
+        val url = URL("$baseUrl/ads/serve/$encodedCode${query(viewer, appId)}")
 
         var connection: HttpURLConnection? = null
         return try {
@@ -42,13 +47,20 @@ internal object AdveroApiClient {
         }
     }
 
-    private fun viewerQuery(viewer: AdveroViewer?): String {
-        if (viewer == null || viewer.token.isEmpty() || viewer.expires <= 0) {
-            return ""
-        }
+    /** `app` identifies the publisher's verified app; the server serves only the placeholder without it. */
+    private fun query(viewer: AdveroViewer?, appId: String?): String {
         fun enc(value: String) = URLEncoder.encode(value, "UTF-8")
-        return "?va=${viewer.age?.toString() ?: ""}&vg=${enc(viewer.gender ?: "")}" +
-            "&vexp=${viewer.expires}&vt=${enc(viewer.token)}"
+        val params = mutableListOf<String>()
+        if (!appId.isNullOrEmpty()) {
+            params += "app=${enc(appId)}"
+        }
+        if (viewer != null && viewer.token.isNotEmpty() && viewer.expires > 0) {
+            params += "va=${viewer.age?.toString() ?: ""}"
+            params += "vg=${enc(viewer.gender ?: "")}"
+            params += "vexp=${viewer.expires}"
+            params += "vt=${enc(viewer.token)}"
+        }
+        return if (params.isEmpty()) "" else "?" + params.joinToString("&")
     }
 
     /** Fire-and-forget viewable-impression beacon; never throws. */

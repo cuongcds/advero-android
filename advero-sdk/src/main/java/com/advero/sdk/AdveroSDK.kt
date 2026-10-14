@@ -124,7 +124,7 @@ object AdveroSDK {
             }
 
             val ad = withContext(Dispatchers.IO) {
-                AdveroApiClient.fetchAd(cfg.baseUrl, placementCode, viewer)
+                AdveroApiClient.fetchAd(cfg.baseUrl, placementCode, viewer, appContext.packageName)
             } ?: return@launch // 204 / network error / bad JSON — stay silent
 
             if (ad.placeholder && !showPlaceholder) {
