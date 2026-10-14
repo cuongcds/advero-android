@@ -23,11 +23,11 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.cuongcds:advero-android:v0.1.0")
+    implementation("com.github.cuongcds:advero-android:v0.2.0")
 }
 ```
 
-Pin to an exact release tag (e.g. `v0.1.0`) rather than a branch — this
+Pin to an exact release tag (e.g. `v0.2.0`) rather than a branch — this
 avoids a future breaking release changing behavior in your app without
 notice. See [releases](https://github.com/cuongcds/advero-android/tags) for
 the latest tag.
@@ -83,7 +83,7 @@ snippet (including a custom `onClick` handler), or
 
 Throws `IllegalArgumentException` immediately if `baseUrl` is blank.
 
-### `AdveroSDK.render(context, placementCode, imageView, showPlaceholder = true, onClick = null)`
+### `AdveroSDK.render(context, placementCode, imageView, showPlaceholder = true, onClick = null, lazy = false, viewer = null)`
 
 | Parameter | Required | Description |
 | --- | --- | --- |
@@ -92,6 +92,8 @@ Throws `IllegalArgumentException` immediately if `baseUrl` is blank.
 | `imageView` | yes | The `ImageView` the creative is decoded into and made clickable on. |
 | `showPlaceholder` | no | When there's no eligible advertiser creative, the API returns a placeholder ("Advertise here" banner linking to this placement's Marketplace listing) instead of leaving the slot empty. Defaults to `true`. Pass `false` to render nothing in that case instead. |
 | `onClick` | no | Called with `clickUrl` when the user taps the ad. If omitted, the SDK opens `clickUrl` itself via a [Custom Tab](https://developer.android.com/develop/ui/views/layout/webapps/browser-custom-tabs). |
+| `lazy` | no | When `true`, the ad is only requested once `imageView` is within ~200dp of the screen, so ads that are never scrolled to are never served. Defaults to `false`. |
+| `viewer` | no | Signed signal about the user, produced by **your server** (see "Viewer signal" below): `AdveroViewer(expires, token, age, gender)`. Omit it when you do not know the user's age or gender. |
 
 Behavior:
 
@@ -99,11 +101,35 @@ Behavior:
   `creative_url` and shows it in `imageView`; tapping it opens `click_url`.
   This also covers the placeholder response (`{ ..., placeholder: true }`)
   unless `showPlaceholder = false` was passed.
+- Advertiser creatives carry a small Advero icon in the top-right corner of `imageView` (like Google's AdChoices badge), loaded from your `baseUrl` (`/assets/images/favicons/favicon_white.png`). Tapping it opens `baseUrl` (the Advero home page) in a Custom Tab; it is not an ad click and never calls `onClick`. It is drawn in the view's overlay, so give `imageView` a size that leaves the top-right corner visible (no `wrap_content` clipping). The house placeholder has no badge.
+- **Viewability:** every advertiser ad is measured. Once at least 50% of `imageView` (30% for very large ads) has been visible for 1 continuous second while the window has focus, the SDK sends one beacon to the signed `view_url` of the response, and only such viewable impressions are billed for CPM campaigns. The thresholds come from the server response. The house placeholder is never measured.
+- Calling `render()` again on the same `imageView` cancels the previous request, badge and measurement.
 - On `204 No Content`, any network/decoding error, or a malformed JSON body,
   nothing is rendered and nothing is thrown — an empty ad slot is normal (no
   eligible campaign for that placement right now), not a failure.
 - Throws only for integration mistakes: blank `placementCode`, or calling
   `render()` before `init()`.
+
+### Viewer signal (optional)
+
+If your app knows the user's age (account profile, age gate) you can pass it so ads are matched to the actual user instead of the placement's declared audience. The signal **must be signed on your server** with the property's signal secret (Advero dashboard, Property settings, "Signal secret"); never put the secret in the app.
+
+```text
+token = HMAC_SHA256_hex( "<placementCode>|<age>|<gender>|<expires>", signalSecret )
+```
+
+`age` and `gender` (`male` / `female`) are empty strings when omitted, `expires` is a unix timestamp at most one hour ahead. Fetch it from your backend and pass it in:
+
+```kotlin
+AdveroSDK.render(
+    context = this,
+    placementCode = placementCode,
+    imageView = adImageView,
+    viewer = AdveroViewer(expires = 1790000000, token = "...", age = 34, gender = "female")
+)
+```
+
+An unsigned, forged or expired signal is ignored. A signal can only narrow who sees an ad: it never lets adult content onto a placement declared for minors. You are responsible for the accuracy of the signal you send.
 
 ## Technical decisions
 

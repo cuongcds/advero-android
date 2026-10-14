@@ -12,10 +12,13 @@ import java.net.URLEncoder
  */
 internal object AdveroApiClient {
 
+    private const val DEFAULT_VIEW_RATIO = 0.5
+    private const val DEFAULT_VIEW_MS = 1000L
+
     /** Returns null for any non-fatal outcome: 204, non-2xx, network error, or bad JSON. */
-    fun fetchAd(baseUrl: String, placementCode: String): AdveroAdResponse? {
+    fun fetchAd(baseUrl: String, placementCode: String, viewer: AdveroViewer? = null): AdveroAdResponse? {
         val encodedCode = URLEncoder.encode(placementCode, "UTF-8")
-        val url = URL("$baseUrl/ads/serve/$encodedCode")
+        val url = URL("$baseUrl/ads/serve/$encodedCode${viewerQuery(viewer)}")
 
         var connection: HttpURLConnection? = null
         return try {
@@ -39,6 +42,35 @@ internal object AdveroApiClient {
         }
     }
 
+    private fun viewerQuery(viewer: AdveroViewer?): String {
+        if (viewer == null || viewer.token.isEmpty() || viewer.expires <= 0) {
+            return ""
+        }
+        fun enc(value: String) = URLEncoder.encode(value, "UTF-8")
+        return "?va=${viewer.age?.toString() ?: ""}&vg=${enc(viewer.gender ?: "")}" +
+            "&vexp=${viewer.expires}&vt=${enc(viewer.token)}"
+    }
+
+    /** Fire-and-forget viewable-impression beacon; never throws. */
+    fun sendViewBeacon(viewUrl: String, ms: Long, ratio: Int) {
+        var connection: HttpURLConnection? = null
+        try {
+            connection = (URL(viewUrl).openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 10_000
+                readTimeout = 10_000
+                doOutput = true
+                setRequestProperty("Content-Type", "text/plain")
+            }
+            connection.outputStream.use { it.write("{\"ms\":$ms,\"ratio\":$ratio}".toByteArray()) }
+            connection.responseCode
+        } catch (e: Exception) {
+            // Best effort — a lost beacon just means this impression is not counted as viewable.
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
     private fun parseResponse(body: String): AdveroAdResponse? {
         return try {
             val json = JSONObject(body)
@@ -51,7 +83,10 @@ internal object AdveroApiClient {
                 creativeUrl = creativeUrl,
                 clickUrl = clickUrl,
                 impressionToken = if (json.isNull("impression_token")) null else json.optString("impression_token"),
-                placeholder = json.optBoolean("placeholder", false)
+                placeholder = json.optBoolean("placeholder", false),
+                viewUrl = json.optString("view_url", "").ifEmpty { null },
+                viewRatio = json.optDouble("view_ratio", DEFAULT_VIEW_RATIO),
+                viewMs = json.optLong("view_ms", DEFAULT_VIEW_MS)
             )
         } catch (e: Exception) {
             null

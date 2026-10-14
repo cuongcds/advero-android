@@ -38,6 +38,7 @@ class AdSlotActivity : AppCompatActivity() {
             placementCode = "ap-89abcdef01234567-0123456789abcdef",
             imageView = secondSlot,
             showPlaceholder = false, // render nothing instead of the "Advertise here" banner
+            lazy = true, // request the ad only once the slot is about to scroll into view
             onClick = { clickUrl ->
                 // e.g. startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(clickUrl)))
             }
