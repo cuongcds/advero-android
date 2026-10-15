@@ -1,6 +1,7 @@
 package com.advero.sdk
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.view.MotionEvent
@@ -32,6 +33,7 @@ object AdveroSDK {
         var tracker: AdveroViewTracker? = null
         var layoutListener: View.OnLayoutChangeListener? = null
         var badge: AdveroBadgeDrawable? = null
+        var collapse: Runnable? = null
     }
 
     @Volatile
@@ -46,6 +48,7 @@ object AdveroSDK {
     private const val LAZY_MARGIN_DP = 200
     private const val LAZY_POLL_MS = 100L
     private const val BADGE_HIT_SLOP_DP = 8
+    private const val BADGE_COLLAPSE_MS = 4000L
 
     /**
      * @param baseUrl origin of the Advero ad-serving endpoint, e.g.
@@ -195,7 +198,11 @@ object AdveroSDK {
         slot.job.cancel()
         slot.tracker?.stop()
         slot.layoutListener?.let { imageView.removeOnLayoutChangeListener(it) }
-        slot.badge?.let { imageView.overlay.remove(it) }
+        slot.collapse?.let { imageView.removeCallbacks(it) }
+        slot.badge?.let {
+            it.release()
+            imageView.overlay.remove(it)
+        }
         imageView.setOnTouchListener(null)
     }
 
@@ -226,7 +233,10 @@ object AdveroSDK {
 
     /**
      * Draws the "Ads by Advero" badge on top of [imageView] and routes taps on
-     * it to [onBadgeClick] instead of the ad's own click handler.
+     * it to the badge instead of the ad's own click handler. A first tap
+     * expands the badge to show its label (it collapses again after a few
+     * seconds or on a tap elsewhere); a tap on the expanded badge calls
+     * [onBadgeClick].
      */
     private fun showBadge(imageView: ImageView, icon: Bitmap, onBadgeClick: () -> Unit) {
         val density = imageView.resources.displayMetrics.density
@@ -235,7 +245,7 @@ object AdveroSDK {
 
         fun placeBadge() {
             val right = imageView.width
-            badge.setBounds(right - badge.sizePx, 0, right, badge.sizePx)
+            badge.setBounds(right - badge.expandedWidthPx, 0, right, badge.sizePx)
         }
         placeBadge()
         imageView.overlay.add(badge)
@@ -248,21 +258,34 @@ object AdveroSDK {
         imageView.addOnLayoutChangeListener(layoutListener)
         slots[imageView]?.layoutListener = layoutListener
 
+        val collapse = Runnable { badge.setExpanded(false) }
+        slots[imageView]?.collapse = collapse
+
         var downOnBadge = false
         imageView.setOnTouchListener { v, event ->
-            val hit = badge.bounds.let {
-                event.x >= it.left - slop && event.x <= it.right + slop &&
-                    event.y >= it.top - slop && event.y <= it.bottom + slop
-            }
+            val area = badge.visibleRect()
+            val hit = event.x >= area.left - slop && event.x <= area.right + slop &&
+                event.y >= area.top - slop && event.y <= area.bottom + slop
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     downOnBadge = hit
+                    if (!hit && badge.expanded) {
+                        imageView.removeCallbacks(collapse)
+                        badge.setExpanded(false)
+                    }
                     downOnBadge
                 }
                 MotionEvent.ACTION_UP -> {
                     if (downOnBadge && hit) {
                         v.playSoundEffect(SoundEffectConstants.CLICK)
-                        onBadgeClick()
+                        imageView.removeCallbacks(collapse)
+                        if (badge.expanded) {
+                            badge.setExpanded(false)
+                            onBadgeClick()
+                        } else {
+                            badge.setExpanded(true)
+                            imageView.postDelayed(collapse, BADGE_COLLAPSE_MS)
+                        }
                     }
                     val wasDown = downOnBadge
                     downOnBadge = false
@@ -279,11 +302,20 @@ object AdveroSDK {
     }
 
     private fun openInCustomTab(context: Context, url: String) {
+        val uri = Uri.parse(url)
+        // The context may be the application context, which can only start activities in a new task.
         try {
-            CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(url))
+            val tab = CustomTabsIntent.Builder().build()
+            tab.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            tab.launchUrl(context, uri)
+            return
         } catch (e: Exception) {
-            // No browser/Custom Tabs provider available — fail silently,
-            // same "never crash the host app" contract as network errors.
+            // Fall through to a plain browser intent.
+        }
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: Exception) {
+            // No browser available — fail silently, same "never crash the host app" contract as network errors.
         }
     }
 }

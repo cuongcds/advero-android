@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "com.advero.example"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -43,10 +43,12 @@ kotlin {
 }
 
 dependencies {
-    // The published artifact via JitPack — same as any real integrating
-    // app would use (see ../README.md "Install"), not the local :advero-sdk
-    // project reference, so this example doubles as a smoke test that the
-    // published dependency actually resolves and works.
-    implementation("com.github.cuongcds:advero-android:c")
+    // Local module, so the example runs against the SDK sources in this repo.
+    implementation(project(":advero-sdk"))
+
+    // The published artifact via JitPack — same as any real integrating app
+    // would use (see ../README.md "Install"); swap with the line above to
+    // smoke-test the published dependency.
+    // implementation("com.github.cuongcds:advero-android:0.2.3")
     implementation("androidx.appcompat:appcompat:1.8.0")
 }
