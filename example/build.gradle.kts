@@ -1,16 +1,15 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "com.advero.example"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.advero.example"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -35,8 +34,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
     }
 }
 
@@ -45,6 +47,6 @@ dependencies {
     // app would use (see ../README.md "Install"), not the local :advero-sdk
     // project reference, so this example doubles as a smoke test that the
     // published dependency actually resolves and works.
-    implementation("com.github.cuongcds:advero-android:v0.1.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.github.cuongcds:advero-android:c")
+    implementation("androidx.appcompat:appcompat:1.8.0")
 }
