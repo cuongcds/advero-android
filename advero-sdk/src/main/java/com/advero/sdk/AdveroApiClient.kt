@@ -98,7 +98,9 @@ internal object AdveroApiClient {
                 placeholder = json.optBoolean("placeholder", false),
                 viewUrl = json.optString("view_url", "").ifEmpty { null },
                 viewRatio = json.optDouble("view_ratio", DEFAULT_VIEW_RATIO),
-                viewMs = json.optLong("view_ms", DEFAULT_VIEW_MS)
+                viewMs = json.optLong("view_ms", DEFAULT_VIEW_MS),
+                widthDp = json.optInt("width", 0),
+                heightDp = json.optInt("height", 0)
             )
         } catch (e: Exception) {
             null

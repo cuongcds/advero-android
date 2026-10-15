@@ -23,11 +23,11 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.cuongcds:advero-android:v0.2.1")
+    implementation("com.github.cuongcds:advero-android:v0.2.2")
 }
 ```
 
-Pin to an exact release tag (e.g. `v0.2.1`) rather than a branch — this
+Pin to an exact release tag (e.g. `v0.2.2`) rather than a branch — this
 avoids a future breaking release changing behavior in your app without
 notice. See [releases](https://github.com/cuongcds/advero-android/tags) for
 the latest tag.
@@ -103,6 +103,7 @@ Behavior:
   unless `showPlaceholder = false` was passed.
 - Advertiser creatives carry a small Advero icon in the top-right corner of `imageView` (like Google's AdChoices badge), loaded from your `baseUrl` (`/assets/images/favicons/favicon_white.png`). Tapping it opens `baseUrl` (the Advero home page) in a Custom Tab; it is not an ad click and never calls `onClick`. It is drawn in the view's overlay, so give `imageView` a size that leaves the top-right corner visible (no `wrap_content` clipping). The house placeholder has no badge.
 - **Viewability:** every advertiser ad is measured. Once at least 50% of `imageView` (30% for very large ads) has been visible for 1 continuous second while the window has focus, the SDK sends one beacon to the signed `view_url` of the response, and only such viewable impressions are billed for CPM campaigns. The thresholds come from the server response. The house placeholder is never measured.
+- **Size cap:** the ad is never shown larger than the placement's ad size on either axis (e.g. a 320x50 banner stays 320x50 inside a 1024x920 `ImageView`): the SDK shrinks the view's `layoutParams` to the ad size in dp. A smaller view is left unchanged, and nothing is capped if the server reports no size.
 - **App identification:** every request carries the app's package name (`context.packageName`) in the `app` parameter. Only an app whose package name is added and verified under the property in the Advero dashboard gets real ads; any other app receives the placeholder.
 - Calling `render()` again on the same `imageView` cancels the previous request, badge and measurement.
 - On `204 No Content`, any network/decoding error, or a malformed JSON body,

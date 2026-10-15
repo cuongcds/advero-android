@@ -4,6 +4,7 @@ package com.advero.sdk
  * Parsed response from GET /ads/serve/{placementCode}.
  * `impressionToken` and `viewUrl` are null for the house placeholder response.
  * `viewRatio` / `viewMs` are the viewability thresholds chosen by the server.
+ * `widthDp` / `heightDp` are the ad size of the placement (0 when unknown).
  */
 internal data class AdveroAdResponse(
     val creativeUrl: String,
@@ -12,5 +13,7 @@ internal data class AdveroAdResponse(
     val placeholder: Boolean,
     val viewUrl: String?,
     val viewRatio: Double,
-    val viewMs: Long
+    val viewMs: Long,
+    val widthDp: Int = 0,
+    val heightDp: Int = 0
 )

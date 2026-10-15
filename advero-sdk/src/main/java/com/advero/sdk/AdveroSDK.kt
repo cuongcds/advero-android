@@ -142,6 +142,7 @@ object AdveroSDK {
             }
 
             imageView.setImageBitmap(bitmap)
+            capToAdSize(imageView, ad.widthDp, ad.heightDp)
             imageView.setOnClickListener {
                 if (onClick != null) {
                     onClick(ad.clickUrl)
@@ -157,6 +158,35 @@ object AdveroSDK {
             }
         }
         slots[imageView] = Slot(job)
+    }
+
+    /**
+     * Shrinks [imageView] so it never exceeds the placement's ad size on either
+     * axis (e.g. a 320x50 banner in a 1024x920 container stays 320x50). A view
+     * already smaller than the ad size is left alone. Does nothing when the
+     * server did not report a size.
+     */
+    private fun capToAdSize(imageView: ImageView, widthDp: Int, heightDp: Int) {
+        if (widthDp <= 0 || heightDp <= 0) return
+        val density = imageView.resources.displayMetrics.density
+        val maxWidth = Math.round(widthDp * density)
+        val maxHeight = Math.round(heightDp * density)
+
+        fun apply() {
+            val params = imageView.layoutParams ?: return
+            var changed = false
+            if (imageView.width > maxWidth || params.width > maxWidth) {
+                params.width = maxWidth
+                changed = true
+            }
+            if (imageView.height > maxHeight || params.height > maxHeight) {
+                params.height = maxHeight
+                changed = true
+            }
+            if (changed) imageView.layoutParams = params
+        }
+
+        if (imageView.isLaidOut) apply() else imageView.post { apply() }
     }
 
     /** Cancels pending work and removes the badge/tracker of a previous render() on [imageView]. */
