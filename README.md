@@ -23,11 +23,11 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.cuongcds:advero-android:v0.2.2")
+    implementation("com.github.cuongcds:advero-android:0.2.2")
 }
 ```
 
-Pin to an exact release tag (e.g. `v0.2.2`) rather than a branch — this
+Pin to an exact release tag (e.g. `0.2.2`) rather than a branch — this
 avoids a future breaking release changing behavior in your app without
 notice. See [releases](https://github.com/cuongcds/advero-android/tags) for
 the latest tag.
