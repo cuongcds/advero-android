@@ -50,6 +50,9 @@ object AdveroSDK {
     private const val BADGE_HIT_SLOP_DP = 8
     private const val BADGE_COLLAPSE_MS = 4000L
 
+    /** A container up to this multiple of the ad width is filled edge to edge. */
+    private const val FILL_TOLERANCE = 1.2f
+
     /**
      * @param baseUrl origin of the Advero ad-serving endpoint, e.g.
      *   "https://ads-advero.domain.com" — no trailing slash required.
@@ -164,26 +167,49 @@ object AdveroSDK {
     }
 
     /**
-     * Shrinks [imageView] so it never exceeds the placement's ad size on either
-     * axis (e.g. a 320x50 banner in a 1024x920 container stays 320x50). A view
-     * already smaller than the ad size is left alone. Does nothing when the
-     * server did not report a size.
+     * Sizes [imageView] against the placement's ad size.
+     *
+     * - Container no wider than [FILL_TOLERANCE] x the ad width (e.g. 360dp for a 320dp ad): the view
+     *   fills the container width and the height scales by the ad's aspect ratio, so the banner
+     *   uses the full row instead of leaving side gaps.
+     * - Wider container: the view is shrunk to the ad size on either axis (a 320x50 banner in a
+     *   1024x920 container stays 320x50). A view already smaller than the ad size is left alone.
+     *
+     * Does nothing when the server did not report a size.
      */
     private fun capToAdSize(imageView: ImageView, widthDp: Int, heightDp: Int) {
         if (widthDp <= 0 || heightDp <= 0) return
         val density = imageView.resources.displayMetrics.density
-        val maxWidth = Math.round(widthDp * density)
-        val maxHeight = Math.round(heightDp * density)
+        val adWidth = Math.round(widthDp * density)
+        val adHeight = Math.round(heightDp * density)
 
         fun apply() {
             val params = imageView.layoutParams ?: return
+            val parent = imageView.parent as? View
+            val available = if (parent != null) {
+                parent.width - parent.paddingLeft - parent.paddingRight
+            } else {
+                imageView.width
+            }
+
+            if (available > 0 && available <= adWidth * FILL_TOLERANCE) {
+                val targetWidth = available
+                val targetHeight = Math.round(available.toFloat() * adHeight / adWidth)
+                if (params.width != targetWidth || params.height != targetHeight) {
+                    params.width = targetWidth
+                    params.height = targetHeight
+                    imageView.layoutParams = params
+                }
+                return
+            }
+
             var changed = false
-            if (imageView.width > maxWidth || params.width > maxWidth) {
-                params.width = maxWidth
+            if (imageView.width > adWidth || params.width > adWidth) {
+                params.width = adWidth
                 changed = true
             }
-            if (imageView.height > maxHeight || params.height > maxHeight) {
-                params.height = maxHeight
+            if (imageView.height > adHeight || params.height > adHeight) {
+                params.height = adHeight
                 changed = true
             }
             if (changed) imageView.layoutParams = params
