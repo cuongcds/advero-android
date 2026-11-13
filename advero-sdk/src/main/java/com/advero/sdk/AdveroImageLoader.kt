@@ -24,11 +24,27 @@ internal object AdveroImageLoader {
             if (connection.responseCode !in 200..299) {
                 return null
             }
-            connection.inputStream.use { BitmapFactory.decodeStream(it) }
+            val bytes = connection.inputStream.use { it.readBytes() }
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight)
+            }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
         } catch (e: Exception) {
             null
         } finally {
             connection?.disconnect()
         }
     }
+
+    private fun sampleSize(width: Int, height: Int): Int {
+        var sample = 1
+        while (width / (sample * 2) >= MAX_EDGE_PX && height / (sample * 2) >= MAX_EDGE_PX) {
+            sample *= 2
+        }
+        return sample
+    }
+
+    private const val MAX_EDGE_PX = 1080
 }
